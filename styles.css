@@ -1,0 +1,9 @@
+body { font-family: system-ui, Arial, sans-serif; margin: 2rem; max-width: 900px; }
+h1 { margin-bottom: .5rem; }
+.small { color:#666; margin-bottom:1rem; }
+label { display:block; margin-top: 1rem; font-weight:600; }
+select, input, textarea { width:100%; padding: .6rem; margin-top:.4rem; }
+button { margin-top: 1rem; padding: .6rem 1rem; cursor: pointer; }
+.hidden { display: none; }
+.card { border:1px solid #ddd; border-radius:8px; padding:1rem; margin-top:1.2rem; background:#fafafa; }
+.btns { display:flex; gap:.6rem; flex-wrap:wrap; }
