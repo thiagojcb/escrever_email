@@ -1,0 +1,14 @@
+{
+  "state1": [
+    {"id": "alice-johnson", "name": "Alice Johnson"},
+    {"id": "bob-smith", "name": "Bob Smith"}
+  ],
+  "state2": [
+    {"id": "carlos-mendes", "name": "Carlos Mendes"},
+    {"id": "diana-lee", "name": "Diana Lee"}
+  ],
+  "state3": [
+    {"id": "eva-brown", "name": "Eva Brown"},
+    {"id": "frank-white", "name": "Frank White"}
+  ]
+}
