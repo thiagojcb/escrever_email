@@ -1,284 +1,135 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Smart Email Generator</title>
-  <style>
-    body { font-family: system-ui, Arial, sans-serif; margin: 2rem; max-width: 900px; }
-    label { display:block; margin-top: 1rem; font-weight:600; }
-    select, input, textarea { width:100%; padding: .6rem; margin-top:.4rem; }
-    .row { display:flex; gap:1rem; flex-wrap:wrap; }
-    .col { flex:1 1 280px; }
-    .btns { display:flex; gap:.6rem; margin-top:1rem; flex-wrap:wrap; }
-    button { padding:.6rem .9rem; cursor:pointer; }
-    .card { border:1px solid #ddd; border-radius:8px; padding:1rem; margin-top:1.5rem; background:#fafafa; }
-    .small { color:#666; font-size:.9rem; }
-    footer { margin-top:2rem; color:#777; font-size:.9rem; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Politician Email Generator</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 2rem; max-width: 600px; }
+  .hidden { display: none; }
+  label { font-weight: bold; margin-top: 1rem; display:block; }
+  select, textarea { width: 100%; padding: .5rem; margin-top: .3rem; }
+  button { margin-top: 1rem; padding: .6rem 1rem; }
+</style>
 </head>
 <body>
-  <h1>Email Text Generator</h1>
-  <p class="small">Select the recipient’s profession and location to generate a tailored email. Edit as needed, then copy or open in your email app.</p>
+<h1>Email Generator for Politicians</h1>
 
-  <div class="row">
-    <div class="col">
-      <label for="profession">Recipient profession</label>
-      <select id="profession">
-        <option value="" selected disabled>Choose…</option>
-        <option value="university_professor">University Professor</option>
-        <option value="industry_researcher">Industry Researcher</option>
-        <option value="journal_editor">Journal Editor</option>
-        <option value="government_official">Government Official</option>
-        <option value="student">Student</option>
-      </select>
-    </div>
+<!-- Step 1 -->
+<label for="type">Step 1: Choose type of politician</label>
+<select id="type">
+  <option value="" selected disabled>Select...</option>
+  <option value="leader">Party Leader</option>
+  <option value="mp">Member of Parliament</option>
+</select>
 
-    <div class="col">
-      <label for="location">Recipient location</label>
-      <select id="location">
-        <option value="" selected disabled>Choose…</option>
-        <option value="uk">United Kingdom</option>
-        <option value="us">United States</option>
-        <option value="eu">European Union</option>
-        <option value="jp">Japan</option>
-        <option value="br">Brazil</option>
-      </select>
-    </div>
-  </div>
+<!-- Step 2: Party -->
+<div id="partyDiv" class="hidden">
+  <label for="party">Step 2: Choose Party</label>
+  <select id="party">
+    <option value="" selected disabled>Select party...</option>
+    <option value="partyA">Party A</option>
+    <option value="partyB">Party B</option>
+    <option value="partyC">Party C</option>
+  </select>
+</div>
 
-  <div class="row">
-    <div class="col">
-      <label for="tone">Tone</label>
-      <select id="tone">
-        <option value="neutral" selected>Neutral</option>
-        <option value="formal">Formal</option>
-        <option value="friendly">Friendly</option>
-        <option value="concise">Concise</option>
-      </select>
-    </div>
-    <div class="col">
-      <label for="subject">Email subject (optional)</label>
-      <input id="subject" placeholder="e.g., Collaboration Inquiry on Neutrino Measurements" />
-    </div>
-  </div>
+<!-- Step 2: State -->
+<div id="stateDiv" class="hidden">
+  <label for="state">Step 2: Choose State</label>
+  <select id="state">
+    <option value="" selected disabled>Select state...</option>
+    <option value="state1">State 1</option>
+    <option value="state2">State 2</option>
+    <option value="state3">State 3</option>
+  </select>
+</div>
 
-  <div class="row">
-    <div class="col">
-      <label for="recipientName">Recipient name (optional)</label>
-      <input id="recipientName" placeholder="e.g., Dr. Smith" />
-    </div>
-    <div class="col">
-      <label for="senderName">Your name/signature</label>
-      <input id="senderName" placeholder="e.g., Thiago Sogo Bezerra" />
-    </div>
-  </div>
+<!-- Step 3: Politician -->
+<div id="politicianDiv" class="hidden">
+  <label for="politician">Step 3: Choose Politician</label>
+  <select id="politician">
+    <option value="" selected disabled>Select politician...</option>
+    <!-- Will populate dynamically based on state -->
+  </select>
+</div>
 
-  <label for="extra">Extra details to include (optional)</label>
-  <textarea id="extra" rows="3" placeholder="Context, links, or specific ask…"></textarea>
+<button id="generateBtn" class="hidden">Generate Email</button>
 
-  <div class="btns">
-    <button id="generateBtn">Generate Email</button>
-    <button id="copyBtn" disabled>Copy Email</button>
-    <button id="mailtoBtn" disabled>Open in Email App</button>
-  </div>
+<!-- Output -->
+<div id="outputDiv" class="hidden">
+  <label for="output">Generated Email</label>
+  <textarea id="output" rows="10"></textarea>
+  <button id="copyBtn">Copy Email</button>
+</div>
 
-  <div class="card">
-    <label for="output">Generated email</label>
-    <textarea id="output" rows="16" spellcheck="false"></textarea>
-  </div>
+<script>
+const typeSelect = document.getElementById('type');
+const partyDiv = document.getElementById('partyDiv');
+const stateDiv = document.getElementById('stateDiv');
+const politicianDiv = document.getElementById('politicianDiv');
+const generateBtn = document.getElementById('generateBtn');
+const outputDiv = document.getElementById('outputDiv');
+const output = document.getElementById('output');
+const copyBtn = document.getElementById('copyBtn');
 
-  <footer>Tip: You can add or change templates in the <code>TEMPLATES</code> section of this file.</footer>
+const politicianOptions = {
+  state1: ['Alice Johnson', 'Bob Smith'],
+  state2: ['Carlos Mendes', 'Diana Lee'],
+  state3: ['Eva Brown', 'Frank White']
+};
 
-  <script>
-    const TEMPLATES = {
-      university_professor: {
-        uk: {
-          subject: "Exploring potential collaboration",
-          body: ({recipientName, tone, extra, senderName}) => {
-            const greet = recipientName ? `Dear ${recipientName},` : "Dear Professor,";
-            const toneLine = {
-              formal: "I hope this message finds you well.",
-              neutral: "I hope you're well.",
-              friendly: "Hope you're doing well!",
-              concise: ""
-            }[tone];
-            return `${greet}
+typeSelect.addEventListener('change', () => {
+  if (typeSelect.value === 'leader') {
+    partyDiv.classList.remove('hidden');
+    stateDiv.classList.add('hidden');
+    politicianDiv.classList.add('hidden');
+  } else if (typeSelect.value === 'mp') {
+    stateDiv.classList.remove('hidden');
+    partyDiv.classList.add('hidden');
+  }
+});
 
-${toneLine} I'm reaching out regarding potential collaboration on precision measurements relevant to neutrino physics. Your group's work in the UK aligns closely with our recent progress on AI-driven reconstruction and classification for detector data.
+document.getElementById('state').addEventListener('change', (e) => {
+  const state = e.target.value;
+  const polSelect = document.getElementById('politician');
+  polSelect.innerHTML = '<option value="" disabled selected>Select politician...</option>';
+  politicianOptions[state].forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    polSelect.appendChild(opt);
+  });
+  politicianDiv.classList.remove('hidden');
+});
 
-${extra ? extra + "\n\n" : ""}If you're open to it, I'd welcome a brief call to discuss overlap and a possible joint pilot.
+document.getElementById('party').addEventListener('change', () => {
+  generateBtn.classList.remove('hidden');
+});
 
-Kind regards,
-${senderName || ""}`;
-          }
-        },
-        us: {
-          subject: "Brief intro and potential research alignment",
-          body: ({recipientName, tone, extra, senderName}) => {
-            const greet = recipientName ? `Hello ${recipientName},` : "Hello Professor,";
-            const toneLine = {
-              formal: "I hope this note finds you well.",
-              neutral: "I hope you're well.",
-              friendly: "Hope all's well!",
-              concise: ""
-            }[tone];
-            return `${greet}
+document.getElementById('politician').addEventListener('change', () => {
+  generateBtn.classList.remove('hidden');
+});
 
-${toneLine} I'm writing to see if there might be alignment between your group's interests and our recent work using AI to enhance event reconstruction in neutrino detectors.
+generateBtn.addEventListener('click', () => {
+  const type = typeSelect.value;
+  let emailText = '';
+  if (type === 'leader') {
+    const party = document.getElementById('party').value;
+    emailText = `Subject: Request for Meeting\n\nDear ${party} Party Leader,\n\nI am writing to discuss important issues affecting our community. Your leadership is crucial in shaping policies that matter to us.\n\nBest regards,\n[Your Name]`;
+  } else {
+    const state = document.getElementById('state').value;
+    const politician = document.getElementById('politician').value;
+    emailText = `Subject: Concern from ${state}\n\nDear ${politician},\n\nAs a constituent from ${state}, I would like to share my thoughts on recent developments and seek your support on key matters.\n\nSincerely,\n[Your Name]`;
+  }
+  output.value = emailText;
+  outputDiv.classList.remove('hidden');
+});
 
-${extra ? extra + "\n\n" : ""}Would you be open to a short call to compare notes?
-
-Best regards,
-${senderName || ""}`;
-          }
-        }
-      },
-      industry_researcher: {
-        eu: {
-          subject: "Quick chat about applied AI for detectors",
-          body: ({recipientName, tone, extra, senderName}) => {
-            const greet = recipientName ? `Hi ${recipientName},` : "Hi there,";
-            const toneLine = {
-              formal: "I’m contacting you regarding potential collaboration.",
-              neutral: "Reaching out about potential collaboration.",
-              friendly: "Reaching out—would love to compare approaches.",
-              concise: ""
-            }[tone];
-            return `${greet}
-
-${toneLine} We’re applying AI for signal classification and precision measurements in detector environments and I think there may be clear application in your EU-focused projects.
-
-${extra ? extra + "\n\n" : ""}Open to a 20‑minute intro call?
-
-Thanks,
-${senderName || ""}`;
-          }
-        }
-      },
-      journal_editor: {
-        jp: {
-          subject: "Potential submission—AI for neutrino detector analysis",
-          body: ({recipientName, tone, extra, senderName}) => {
-            const greet = recipientName ? `Dear ${recipientName},` : "Dear Editor,";
-            const toneLine = {
-              formal: "I would like to inquire about fit and scope.",
-              neutral: "I’d like to ask about scope/fit.",
-              friendly: "Quick question on scope/fit.",
-              concise: ""
-            }[tone];
-            return `${greet}
-
-${toneLine} We’re preparing a manuscript on AI‑driven precision measurements and detector event reconstruction.
-
-${extra ? extra + "\n\n" : ""}Would this be appropriate for consideration in your journal?
-
-Sincerely,
-${senderName || ""}`;
-          }
-        }
-      },
-      government_official: {
-        br: {
-          subject: "Short briefing request",
-          body: ({recipientName, tone, extra, senderName}) => {
-            const greet = recipientName ? `Prezado(a) ${recipientName},` : "Prezado(a),";
-            const toneLine = {
-              formal: "Solicito a possibilidade de uma breve apresentação técnica.",
-              neutral: "Gostaria de propor uma breve apresentação técnica.",
-              friendly: "Podemos marcar uma conversa rápida?",
-              concise: ""
-            }[tone];
-            return `${greet}
-
-${toneLine} O tema é aplicação de IA para análises em detectores e possíveis impactos em projetos nacionais.
-
-${extra ? extra + "\n\n" : ""}Agradeço a atenção.
-${senderName || ""}`;
-          }
-        }
-      },
-      student: {
-        us: {
-          subject: "Mentorship / project discussion",
-          body: ({recipientName, tone, extra, senderName}) => {
-            const greet = recipientName ? `Hi ${recipientName},` : "Hi,";
-            const toneLine = {
-              formal: "I’m reaching out regarding potential mentorship.",
-              neutral: "I’m reaching out about potential mentorship.",
-              friendly: "I’d love to chat about mentorship and projects.",
-              concise: ""
-            }[tone];
-            return `${greet}
-
-${toneLine} I can share materials on AI‑assisted analysis in neutrino physics and suggest next steps.
-
-${extra ? extra + "\n\n" : ""}Would a quick call work?
-
-Best,
-${senderName || ""}`;
-          }
-        }
-      }
-    };
-
-    function generateEmail() {
-      const profession = document.getElementById('profession').value;
-      const location = document.getElementById('location').value;
-      const tone = document.getElementById('tone').value;
-      const recipientName = document.getElementById('recipientName').value.trim();
-      const senderName = document.getElementById('senderName').value.trim();
-      const extra = document.getElementById('extra').value.trim();
-      const subjectOverride = document.getElementById('subject').value.trim();
-      const out = document.getElementById('output');
-
-      if (!profession || !location) {
-        out.value = "Please select both profession and location.";
-        return { subject: "", body: out.value };
-      }
-
-      const prof = TEMPLATES[profession] || {};
-      const loc = prof[location];
-
-      if (!loc) {
-        out.value = "No template for this profession + location yet. Please add one in TEMPLATES.";
-        return { subject: "", body: out.value };
-      }
-
-      const subject = subjectOverride || loc.subject || "Re:";
-      const body = loc.body({ recipientName, tone, extra, senderName });
-      out.value = `Subject: ${subject}\n\n${body}`;
-      document.getElementById('copyBtn').disabled = false;
-      document.getElementById('mailtoBtn').disabled = false;
-
-      return { subject, body };
-    }
-
-    function mailtoLink(subject, body) {
-      const s = encodeURIComponent(subject);
-      const b = encodeURIComponent(body);
-      return `mailto:?subject=${s}&body=${b}`;
-    }
-
-    document.getElementById('generateBtn').addEventListener('click', () => generateEmail());
-
-    document.getElementById('copyBtn').addEventListener('click', async () => {
-      const text = document.getElementById('output').value;
-      try {
-        await navigator.clipboard.writeText(text);
-        alert('Copied to clipboard.');
-      } catch {
-        // Fallback
-        document.getElementById('output').select();
-        document.execCommand('copy');
-        alert('Copied (fallback).');
-      }
-    });
-
-    document.getElementById('mailtoBtn').addEventListener('click', () => {
-      const { subject, body } = generateEmail();
-      if (subject && body) window.location.href = mailtoLink(subject, body);
-    });
-  </script>
+copyBtn.addEventListener('click', async () => {
+  await navigator.clipboard.writeText(output.value);
+  alert('Email copied to clipboard!');
+});
+</script>
 </body>
 </html>
