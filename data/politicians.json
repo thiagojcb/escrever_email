@@ -10,5 +10,9 @@
   "state3": [
     {"id": "eva-brown", "name": "Eva Brown"},
     {"id": "frank-white", "name": "Frank White"}
+  ],
+  "state4": [
+    {"id": "blie", "name": "BLO"},
+    {"id": "bloe", "name": "BLO"}
   ]
 }
