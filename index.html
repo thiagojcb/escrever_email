@@ -1,31 +1,27 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="utf-8">
+  <!-- Ensures responsive layout on phones -->
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Politician Email Generator</title>
-
- <!-- 1) Your stylesheet -->
-<link rel="stylesheet" href="styles.css">
-
-<!-- 2) Tom Select (searchable dropdown) CSS + JS from CDN -->
-<input id="tom-select-it" />
-<link rel="stylesheet" href="/css/tom-select.default.css">
-<script src="/js/tom-select.complete.js"></script>
-<script>
-var settings = {};
-new TomSelect('#tom-select-it',settings);
-</script>
-  
-<!-- 3) Your app logic (AFTER Tom Select). 'defer' ensures it runs after the DOM is parsed -->
-<script src="app.js"></script>
-  
+  <style>
+    /* Basic styling for readability */
+    body { font-family: system-ui, Arial, sans-serif; margin: 2rem; max-width: 800px; }
+    h1 { margin-bottom: .5rem; }
+    .small { color:#666; margin-bottom:1rem; }
+    label { display:block; margin-top: 1rem; font-weight:600; }
+    select, input, textarea { width:100%; padding: .6rem; margin-top:.4rem; }
+    button { margin-top: 1rem; padding: .6rem 1rem; cursor: pointer; }
+    .hidden { display: none; } /* Used to show/hide steps */
+    .card { border:1px solid #ddd; border-radius:8px; padding:1rem; margin-top:1.2rem; background:#fafafa; }
+  </style>
 </head>
 <body>
   <h1>Politician Email Generator</h1>
-  <p class="small">Choose the type, then filter by party or state and politician. Search by typing.</p>
+  <div class="small">Follow the steps to generate a ready‑to‑copy email.</div>
 
-  <!-- Step 1 -->
+  <!-- STEP 1: Choose type -->
   <label for="type">Step 1: Choose type of politician</label>
   <select id="type">
     <option value="" selected disabled>Select…</option>
@@ -33,29 +29,40 @@ new TomSelect('#tom-select-it',settings);
     <option value="mp">Member of Parliament</option>
   </select>
 
-  <!-- Step 2A: Party -->
+  <!-- STEP 2A: Party (shown only when type=leader) -->
   <div id="partyDiv" class="hidden">
     <label for="party">Step 2: Choose Party</label>
-    <select id="party" placeholder="Search or select a party…">
-      <!-- Options will be populated from JSON or static list -->
+    <select id="party">
+      <option value="" selected disabled>Select party…</option>
+      <!-- Add or rename parties here -->
+      <option value="partyA">Party A</option>
+      <option value="partyB">Party B</option>
+      <option value="partyC">Party C</option>
     </select>
   </div>
 
-  <!-- Step 2B: State -->
+  <!-- STEP 2B: State (shown only when type=mp) -->
   <div id="stateDiv" class="hidden">
     <label for="state">Step 2: Choose State</label>
-    <select id="state" placeholder="Search or select a state…">
-      <!-- You can hardcode states or derive from politicians.json keys -->
+    <select id="state">
+      <option value="" selected disabled>Select state…</option>
+      <!-- Add your actual states here -->
+      <option value="state1">State 1</option>
+      <option value="state2">State 2</option>
+      <option value="state3">State 3</option>
     </select>
   </div>
 
-  <!-- Step 3: Politician -->
+  <!-- STEP 3: Politician (shown after a state is selected) -->
   <div id="politicianDiv" class="hidden">
     <label for="politician">Step 3: Choose Politician</label>
-    <select id="politician" placeholder="Type to search politician…"></select>
+    <select id="politician">
+      <option value="" selected disabled>Select politician…</option>
+      <!-- Will be populated dynamically from JS based on state -->
+    </select>
   </div>
 
-  <!-- Options -->
+  <!-- Optional: Subject/Tone fields (you can remove or expand later) -->
   <div id="optionsDiv" class="hidden">
     <label for="subject">Subject (optional)</label>
     <input id="subject" placeholder="e.g., Meeting request regarding [topic]" />
@@ -68,16 +75,216 @@ new TomSelect('#tom-select-it',settings);
     </select>
   </div>
 
+  <!-- Generate button appears when inputs are sufficient -->
   <button id="generateBtn" class="hidden">Generate Email</button>
 
+  <!-- OUTPUT -->
   <div id="outputDiv" class="hidden card">
     <label for="output">Generated Email</label>
     <textarea id="output" rows="14" spellcheck="false"></textarea>
-    <div class="btns">
+    <div>
       <button id="copyBtn">Copy Email</button>
+      <!-- Opens default email client with prefilled fields -->
       <button id="mailtoBtn">Open in Email App</button>
     </div>
   </div>
 
+  <script>
+    /*********************
+     * DOM references
+     *********************/
+    const typeSelect = document.getElementById('type');
+    const partyDiv = document.getElementById('partyDiv');
+    const stateDiv = document.getElementById('stateDiv');
+    const politicianDiv = document.getElementById('politicianDiv');
+    const optionsDiv = document.getElementById('optionsDiv');
+    const generateBtn = document.getElementById('generateBtn');
+    const outputDiv = document.getElementById('outputDiv');
+    const output = document.getElementById('output');
+    const copyBtn = document.getElementById('copyBtn');
+    const mailtoBtn = document.getElementById('mailtoBtn');
+
+    const partySelect = document.getElementById('party');
+    const stateSelect = document.getElementById('state');
+    const politicianSelect = document.getElementById('politician');
+    const subjectInput = document.getElementById('subject');
+    const toneSelect = document.getElementById('tone');
+
+    /*********************
+     * Data “model”
+     *********************/
+    // Map of state -> list of politicians.
+    // Update this with your real data.
+    const POLITICIANS_BY_STATE = {
+      state1: ['Alice Johnson', 'Bob Smith'],
+      state2: ['Carlos Mendes', 'Diana Lee'],
+      state3: ['Eva Brown', 'Frank White']
+    };
+
+    // Email templates. Keep logic simple and explicit.
+    // You can split this further by language or purpose if needed.
+    const Templates = {
+      leader: {
+        // For a party leader email
+        subject: (party) => `Request for meeting with ${readableParty(party)} Party Leader`,
+        body: ({ party, tone }) => {
+          const greet = `Dear ${readableParty(party)} Party Leader,`;
+          const toneLine = chooseToneLine(tone, 'leader');
+          return `${greet}
+
+${toneLine} I’m writing to request a brief meeting to discuss [topic/issue] and its impact on our community.
+
+I’d appreciate the opportunity to share evidence‑based considerations and potential solutions that could inform your party’s policy priorities.
+
+Kind regards,
+[Your Name]
+[Affiliation, optional]`;
+        }
+      },
+      mp: {
+        // For a specific MP email
+        subject: (state, politician) => `Constituent request from ${readableState(state)} for ${politician}`,
+        body: ({ state, politician, tone }) => {
+          const greet = `Dear ${politician},`;
+          const toneLine = chooseToneLine(tone, 'mp');
+          return `${greet}
+
+${toneLine} As a constituent from ${readableState(state)}, I’m writing regarding [topic/issue]. I’m seeking your support to address the following points:
+• Point 1
+• Point 2
+• Point 3
+
+Thank you for your time and service.
+
+Sincerely,
+[Your Name]
+[Address / Postcode, optional]`;
+        }
+      }
+    };
+
+    // Helpers to display human‑friendly labels (edit to your real labels)
+    function readableParty(code) {
+      const map = { partyA: 'Party A', partyB: 'Party B', partyC: 'Party C' };
+      return map[code] || code;
+    }
+    function readableState(code) {
+      const map = { state1: 'State 1', state2: 'State 2', state3: 'State 3' };
+      return map[code] || code;
+    }
+
+    // Choose an opening line based on tone and flow
+    function chooseToneLine(tone, kind) {
+      const lines = {
+        formal: "I hope this message finds you well.",
+        neutral: "I hope you're well.",
+        friendly: "Hope you're doing well!",
+        concise: ""
+      };
+      return lines[tone] || "";
+    }
+
+    /*********************
+     * UI Logic (events)
+     *********************/
+    // Step 1 change: reveal Party or State sections
+    typeSelect.addEventListener('change', () => {
+      const t = typeSelect.value;
+      hide(partyDiv, stateDiv, politicianDiv, outputDiv, generateBtn);
+      subjectInput.value = '';
+      politicianSelect.innerHTML = '<option value="" disabled selected>Select politician…</option>';
+
+      if (t === 'leader') {
+        show(partyDiv, optionsDiv);
+      } else if (t === 'mp') {
+        show(stateDiv, optionsDiv);
+      }
+    });
+
+    // When a party is chosen, we can generate immediately (no more steps)
+    partySelect.addEventListener('change', () => {
+      show(generateBtn);
+      hide(outputDiv); // hide previous result if any
+    });
+
+    // When a state is chosen, populate politicians and reveal the dropdown
+    stateSelect.addEventListener('change', () => {
+      const state = stateSelect.value;
+      populatePoliticians(state);
+      show(politicianDiv);
+      hide(outputDiv);
+    });
+
+    // When a politician is chosen, enable Generate
+    politicianSelect.addEventListener('change', () => {
+      show(generateBtn);
+      hide(outputDiv);
+    });
+
+    // Generate button: build email based on selections
+    generateBtn.addEventListener('click', () => {
+      const type = typeSelect.value;
+      const tone = toneSelect.value;
+      const subjectOverride = subjectInput.value.trim();
+
+      let subject = 'Re:';
+      let body = '';
+
+      if (type === 'leader') {
+        const party = partySelect.value;
+        subject = subjectOverride || Templates.leader.subject(party);
+        body = Templates.leader.body({ party, tone });
+      } else if (type === 'mp') {
+        const state = stateSelect.value;
+        const pol = politicianSelect.value;
+        subject = subjectOverride || Templates.mp.subject(state, pol);
+        body = Templates.mp.body({ state, politician: pol, tone });
+      }
+
+      // Put result in textarea
+      output.value = `Subject: ${subject}\n\n${body}`;
+      show(outputDiv);
+    });
+
+    // Copy to clipboard
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(output.value);
+        alert('Email copied to clipboard!');
+      } catch {
+        // Fallback for older browsers
+        output.focus(); output.select();
+        document.execCommand('copy');
+        alert('Copied (fallback).');
+      }
+    });
+
+    // Open default email client via a mailto: link
+    mailtoBtn.addEventListener('click', () => {
+      const text = output.value || '';
+      // Split the textarea content into subject/body if it starts with "Subject: ..."
+      const m = text.match(/^Subject:\s*(.*)\n\n([\s\S]*)$/);
+      const subject = encodeURIComponent(m ? m[1] : 'Re:');
+      const body = encodeURIComponent(m ? m[2] : text);
+      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    });
+
+    /*********************
+     * Utilities
+     *********************/
+    function populatePoliticians(state) {
+      // Reset list
+      politicianSelect.innerHTML = '<option value="" disabled selected>Select politician…</option>';
+      const names = POLITICIANS_BY_STATE[state] || [];
+      names.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        politicianSelect.appendChild(opt);
+      });
+    }
+    function show(...els) { els.forEach(el => el.classList.remove('hidden')); }
+    function hide(...els) { els.forEach(el => el.classList.add('hidden')); }
+  </script>
 </body>
 </html>
